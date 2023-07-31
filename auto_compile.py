@@ -80,14 +80,6 @@ char_limit = int(char_limit)
 # create a description field for tag matching in lower case and capped at average description length
 news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
-# Replaced on 7/27 with custom function below
-# loop through and assign tags
-#for i in tag_ref['tag_cat']:
-   # values = tag_ref[tag_ref['tag_cat'] == i]
-   # v = list(values['phrase'])
-   # conditions = list(map(news['desc_match'].str.contains, v)) # Condition to say where the news description includes any tag
-    #news[i] = np.select(conditions, values['tag'], '') # Apply tags, "" if no tags exist
-
 # Define string matching function
 def get_matching_values(row, keywords):
     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
@@ -100,16 +92,6 @@ for i in tag_ref['tag_cat']:
     keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
     keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
-
-# Define string matching function
-#def get_matching_values(row, keywords):
- #   matching_values = [keyword for keyword in keywords if row.lower().find(keyword) != -1]
-  #  return ', '.join(matching_values) if matching_values else ''
-
-#for i in tag_ref['tag_cat']:
- #   values = tag_ref[tag_ref['tag_cat'] == i]
-  #  v = list(values['phrase'])
-   # news[i] = news['desc_match'].apply(get_matching_values, keywords= v)
 
 # Create concatenated tag variable
 news['tag'] = news[['Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',

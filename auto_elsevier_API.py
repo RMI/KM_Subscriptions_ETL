@@ -13,18 +13,20 @@
 from elsapy.elsclient import ElsClient
 from elsapy.elsdoc import FullDoc, AbsDoc
 from elsapy.elssearch import ElsSearch
-import json
 import pandas as pd
 from datetime import date, timedelta
 import time
+import os
+from dotenv import load_dotenv
     
-## Load configuration
-con_file = open("config.json")
-config = json.load(con_file)
-con_file.close()
+
+#Load API credentials
+load_dotenv('cred.env')
+API = os.getenv('ELSEVIER_API_LIB')
 
 ## Initialize client
-client = ElsClient(config['apikey_lib'])
+client = ElsClient(API)
+
 
 # Date parameter to extract articles from current or past year
 date = date.today() - timedelta(days=365)

@@ -15,11 +15,11 @@ from datetime import date
 #Load API credentials
 load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
-
+rmi_ip = os.getenv('DBASE_IP')
 
 database_username = 'rmiadmin'
 database_password = rmi_db
-database_ip       = 'rmi-prod-mysql.mysql.database.azure.com'
+database_ip       = rmi_ip
 database_name     = 'rmi_km_news'
 database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                format(database_username, database_password, 
@@ -61,17 +61,23 @@ char_limit = int(char_limit)
 # create a description field for tag matching in lower case and capped at average description length
 news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
-# loop through and assign tags
-for i in tag_ref['tag_cat']:
-    values = tag_ref[tag_ref['tag_cat'] == i]
-    v = list(values['phrase'])
-    conditions = list(map(news['desc_match'].str.contains, values['phrase'])) # Condition to say where the news description includes any tag
-    news[i] = np.select(conditions, values['tag'], '') # Apply tags, "" if no tags exist
+# Define string matching function
+def get_matching_values(row, keywords):
+    matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
+    return ', '.join(matching_values) if matching_values else ''
 
+# Loop through descriptions, stringing together all matching tags
+for i in tag_ref['tag_cat']:
+    keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
+    keywords_tag = keywords_tag[['tag', 'phrase']]
+    keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
+    keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
+    news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
 # Create concatenated tag variable
 news['tag'] = news[['Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
                          'Policy', 'Region', 'Status', 'Sector', 'Technology']].fillna('').agg(','.join, axis=1)
+
 
 ### Create match score variable
 # Create id for unique article

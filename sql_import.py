@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 #Load API credentials
 load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
-
+rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel('news_data.xlsx')
 
@@ -18,8 +18,7 @@ df = df[['title', 'file_title', 'pubDate', 'url', 'creators', 'description', 'so
 
 # connect to database
 config = {
-  'host':'rmi-prod-mysql.mysql.database.azure.com',
- # 'host' :'rmi-prod-mysql.rmi-prod-mysql.private.mysql.database.azure.com',
+  'host': rmi_ip,
   'user':'rmiadmin',
   'password': rmi_db,
   'database':'rmi_km_news',
@@ -49,7 +48,7 @@ cursor.close()
 # Import dataframe into MySQL
 database_username = 'rmiadmin'
 database_password = rmi_db
-database_ip       = 'rmi-prod-mysql.mysql.database.azure.com'
+database_ip       = rmi_ip
 database_name     = 'rmi_km_news'
 database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                format(database_username, database_password, 

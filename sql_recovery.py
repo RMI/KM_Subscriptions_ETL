@@ -10,7 +10,7 @@ from datetime import date
 
 load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
-
+rmi_ip = os.getenv('DBASE_IP')
 
 database_username = 'rmiadmin'
 database_password = rmi_db
@@ -49,7 +49,7 @@ df1.to_sql(con=backup_db_connection, name='portal_live', if_exists='append', ind
 
 database_username = 'rmiadmin'
 database_password = rmi_db
-database_ip       = 'rmi-prod-mysql.mysql.database.azure.com'
+database_ip       = rmi_ip
 database_name     = 'rmi_km_news'
 db_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                format(database_username, database_password, 

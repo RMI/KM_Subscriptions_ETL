@@ -14,6 +14,8 @@ import numpy as np
 #Load API credentials
 load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
+rmi_ip = os.getenv('DBASE_IP')
+
 
 df = pd.read_excel("C:/Users/ghoffman/OneDrive - RMI/Knowledge Resources/Manual Resource Submissions.xlsx")
 
@@ -45,14 +47,18 @@ if char_limit < 250:
 # create a description field for tag matching in lower case and capped at average description length
 news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
-# loop through and assign tags
+# Define string matching function
+def get_matching_values(row, keywords):
+    matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
+    return ', '.join(matching_values) if matching_values else ''
+
+# Loop through descriptions, stringing together all matching tags
 for i in tag_ref['tag_cat']:
-    values = tag_ref[tag_ref['tag_cat'] == i]
-    v = list(values['phrase'])
-    # conditions = list(map(news['description'].str.contains, v)) # Condition to say where the news description includes any tag
-    conditions = list(map(news['desc_match'].str.contains, values['phrase'])) # Condition to say where the news description includes any tag
-    # news[i] = np.select(conditions, v, '') # Apply tags, "" if no tags exist
-    news[i] = np.select(conditions, values['tag'], '') # Apply tags, "" if no tags exist
+    keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
+    keywords_tag = keywords_tag[['tag', 'phrase']]
+    keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
+    keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
+    news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
 # Create concatenated tag variable
 news['tag'] = news[['Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
@@ -104,8 +110,7 @@ df.to_excel('Data/backups/full_text_submission_update.xlsx')
 
 # connect to database
 config = {
-  'host':'rmi-prod-mysql.mysql.database.azure.com',
- # 'host' :'rmi-prod-mysql.rmi-prod-mysql.private.mysql.database.azure.com',
+  'host': rmi_ip,
   'user':'rmiadmin',
   'password': rmi_db,
   'database':'rmi_km_news',
@@ -132,7 +137,7 @@ cursor.close()
 # Import dataframe into MySQL
 database_username = 'rmiadmin'
 database_password = rmi_db
-database_ip       = 'rmi-prod-mysql.mysql.database.azure.com'
+database_ip       = rmi_ip
 database_name     = 'rmi_km_news'
 database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                format(database_username, database_password, 
