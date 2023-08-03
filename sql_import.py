@@ -12,9 +12,9 @@ rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel('news_data.xlsx')
 
-df = df[['title', 'file_title', 'pubDate', 'url', 'creators', 'description', 'source', 'behavior', 'emissions', 
-        'environment', 'industry','intervention', 'policy', 'region', 'sector', 'status', 'technology',
-        'tag_concat', 'tag_score']]
+df = df[[ 'title','file_title', 'pubDate', 'url', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
+             'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
+             'tag_concat', 'tag_score']]
 
 # connect to database
 config = {

@@ -80,10 +80,13 @@ char_limit = int(char_limit)
 # create a description field for tag matching in lower case and capped at average description length
 news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
+##################################################33
+##############################################################
+
 # Define string matching function
 def get_matching_values(row, keywords):
     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
-    return ', '.join(matching_values) if matching_values else ''
+    return ','.join(matching_values) if matching_values else ''
 
 # Loop through descriptions, stringing together all matching tags
 for i in tag_ref['tag_cat']:
@@ -94,16 +97,16 @@ for i in tag_ref['tag_cat']:
     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
 # Create concatenated tag variable
-news['tag'] = news[['Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
-                         'Policy', 'Region', 'Status', 'Sector', 'Technology']].fillna('').agg(','.join, axis=1)
+news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+                         'Policy', 'Sector', 'Technology', 'Theory of Change']].fillna('').agg(','.join, axis=1)
 
 ### Create match score variable
 # Create id for unique article
 news['uid'] = np.arange(0,len(news),1)
 
 # Transform tags to long format 
-score_sub = news[['uid','Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
-                         'Policy', 'Region', 'Status', 'Sector', 'Technology']]
+score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+                         'Policy', 'Sector', 'Technology', 'Theory of Change']]
 score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
 score['value'].replace('', np.nan, inplace=True)
 score = score.dropna()
@@ -119,12 +122,14 @@ news['tag'].replace(pattern, ',', regex = True, inplace = True)
 pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
 news['tag'].replace(pattern, '', regex = True, inplace = True)
 
-news.rename(columns={'Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
-            'Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 'Region':'region', 
-            'Sector':'sector', 'Status':'status', 'Technology':'technology', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
+            'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
+            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
-news = news[['title', 'pubDate', 'url', 'creators', 'description', 'source', 'behavior', 'emissions', 'environment', 
-            'industry', 'intervention', 'policy', 'region', 'sector', 'status', 'technology', 'tag_concat', 'tag_score']]
+
+news = news[[ 'title', 'pubDate', 'url', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
+             'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
+             'tag_concat', 'tag_score']]
 
 ########### Title Format #############
 
@@ -150,7 +155,6 @@ news.to_excel('news_data.xlsx')
 ################# Data Import ###########################
 #########################################################
 exec(open('sql_import.py').read())
-
 
 
 ########################################################
@@ -186,3 +190,4 @@ wb.Save()
 wb.Close()
 # Quit
 xlapp.Quit()
+

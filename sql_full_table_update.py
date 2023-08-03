@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import errorcode
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
 import sqlalchemy
 import os
 from dotenv import load_dotenv
@@ -36,7 +37,9 @@ name = 'Data/backups/database_backup'+ str(date.today()) + '.xlsx'
 df1.to_excel(name)
 df = df1
 
-#df = df1[0:500]
+#df_testing = df1[0:1000]
+
+#df = df_testing
 # Manaul backup import
 #df = pd.read_excel('Data/backups/database_backup_05092023.xlsx')
 
@@ -64,7 +67,7 @@ news['desc_match'] = news['description'].str[:char_limit].str.lower()
 # Define string matching function
 def get_matching_values(row, keywords):
     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
-    return ', '.join(matching_values) if matching_values else ''
+    return ','.join(matching_values) if matching_values else ''
 
 # Loop through descriptions, stringing together all matching tags
 for i in tag_ref['tag_cat']:
@@ -75,17 +78,16 @@ for i in tag_ref['tag_cat']:
     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
 # Create concatenated tag variable
-news['tag'] = news[['Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
-                         'Policy', 'Region', 'Status', 'Sector', 'Technology']].fillna('').agg(','.join, axis=1)
-
+news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+                         'Policy', 'Sector', 'Technology', 'Theory of Change']].fillna('').agg(','.join, axis=1)
 
 ### Create match score variable
 # Create id for unique article
 news['uid'] = np.arange(0,len(news),1)
 
 # Transform tags to long format 
-score_sub = news[['uid','Behavior', 'Emissions', 'Environment', 'Industry' ,'Intervention',
-                         'Policy', 'Region', 'Status', 'Sector', 'Technology']]
+score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+                         'Policy', 'Sector', 'Technology', 'Theory of Change']]
 score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
 score['value'].replace('', np.nan, inplace=True)
 score = score.dropna()
@@ -101,13 +103,13 @@ news['tag'].replace(pattern, ',', regex = True, inplace = True)
 pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
 news['tag'].replace(pattern, '', regex = True, inplace = True)
 
-news.rename(columns={'Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
-            'Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 'Region':'region', 
-            'Sector':'sector', 'Status':'status', 'Technology':'technology', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
+            'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
+            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
 news = news[['id', 'title', 'file_title','pubDate', 'url', 'creators', 'description', 'source', 'pubName', 'doi', 'journalID',
-         'behavior', 'emissions', 'environment','industry', 'intervention', 'policy', 'region', 'sector', 'status', 
-         'technology', 'tag_concat', 'tag_score', 'requested', 'request_date','flagship', 'url_full_txt', 'date_added', 'date_updated',]]
+         'adaptation','behavior', 'emissions', 'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 
+         'technology', 'theory','tag_concat', 'tag_score', 'requested', 'request_date','flagship', 'url_full_txt', 'date_added', 'date_updated']]
 
 df = news
 
