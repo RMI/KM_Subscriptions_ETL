@@ -5,17 +5,14 @@
 
 # Load Packages
 import pandas as pd
-import requests
-import re
-import random
-from requests_html import HTML
-from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 import numpy as np
 from time import sleep
 from random import randint
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from datetime import date
+from webdriver_auto_update.webdriver_auto_update import WebdriverAutoUpdate
 
 # Create empty lists
 data_desc=[]
@@ -24,12 +21,22 @@ data_title=[]
 # data_link=[]
 pages = np.arange(1, 5, 1)
 
+# Target directory to store chromedriver
+driver_directory = "C:/Users/ghoffman/OneDrive - RMI/01. Projects/Python_General/KM_Subscription_ETL_Pipelines/"
+# Create an instance of WebdriverAutoUpdate
+driver_manager = WebdriverAutoUpdate(driver_directory)
+# Call the main method to manage chromedriver
+driver_manager.main()
 
+from webdriver_manager.chrome import ChromeDriverManager
+
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 # Open each of the first 4 pages of FT News Page, extract the html, and extract the relevant information
 for page in pages:
     
     page= "https://www.ft.com/news-feed?page=" + str(page)
-    driver = webdriver.Edge()
+   # driver = webdriver.Edge(executable_path="C:/Users/ghoffman/OneDrive - RMI/01. Projects/Python_General/KM_Subscription_ETL_Pipelines/msedgedriver.exe")
+   # driver = webdriver.Chrome(executable_path="C:/Users/ghoffman/OneDrive - RMI/01. Projects/Python_General/KM_Subscription_ETL_Pipelines/chromedriver.exe")
     driver.get(page)  
     sleep(randint(2,10))
     soup = BeautifulSoup(driver.page_source, 'html.parser')

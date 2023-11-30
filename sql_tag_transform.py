@@ -1,12 +1,10 @@
-import mysql.connector
-from mysql.connector import errorcode
 import pandas as pd
 import sqlalchemy
 import os
 from dotenv import load_dotenv
-import re
-import numpy as np
 from datetime import date
+from sqlalchemy import text
+
 
 file = 'Data/backups/tag_import' + str(date.today()) + '.xlsx'
 ###### PURPOSE ############
@@ -27,16 +25,15 @@ database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{
 
 # Get existing wide tag content
 with database_connection.connect() as conn:
-    result = conn.execute("select id, adaptation,behavior, emissions, environment,finance,geography,industry, intervention, policy, sector, technology, theory from portal_live where tag_concat IS NOT NULL")
+    result = conn.execute(text("select id, adaptation,behavior, emissions, environment,finance,geography,industry, intervention, policy, sector, technology, theory from portal_live where tag_concat IS NOT NULL"))
     df1 = pd.DataFrame(result.fetchall())
     df1.columns = result.keys()
 
 # Get existing long format ids
 with database_connection.connect() as conn:
-    result = conn.execute("select content_id from portal_content_tags")
+    result = conn.execute(text("select content_id from portal_content_tags"))
     df_check = pd.DataFrame(result.fetchall())
     df_check.columns = result.keys()
-
 
 # cross check to filter out wide format that have already been converted
 df = df1[~df1.id.isin(df_check['content_id'])]

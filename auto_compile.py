@@ -10,6 +10,7 @@ import re
 import win32com.client
 import time
 
+
 #### Add new full text urls to the database
 exec(open('sql_update_fulltexturl.py').read())
 
@@ -35,11 +36,13 @@ exec(open('auto_WSJ_RSS.py').read())
 # MIT Sloan Management Review
 exec(open('auto_MIT_RSS.py').read())
 # Oil & Gas Journal
-exec(open('auto_OGJ_RSS.py').read())
+#exec(open('auto_OGJ_RSS.py').read())
 # LA Times
 exec(open('auto_LAT_RSS.py').read())
 # Elsevier API: Added 3/13/2023
 exec(open('auto_elsevier_API.py').read())
+# Times of India RSS feed: Added 11/7/2023
+exec(open('auto_times_india.py').read())
 
 
 #########################################################
@@ -156,7 +159,6 @@ news.to_excel('news_data.xlsx')
 #########################################################
 exec(open('sql_import.py').read())
 
-
 ########################################################
 ############ Import New Manual Submissions #############
 ########################################################
@@ -168,6 +170,13 @@ exec(open('sql_import_fulltext.py').read())
 ## Need to update once we start adding full text to make sure it only pulls full text
 #########################################################
 # exec(open('sql_export.py').read())
+
+#########################################################
+####### Transform Tags to Long Format in Database ######
+######## Note: Used for metrics dashboard only ##########
+#########################################################
+
+exec(open('sql_tag_transform.py').read())
 
 #####################################################################################
 #### Update Data Connection in Available Resources Excel File #######################

@@ -9,13 +9,17 @@ import feedparser
 from bs4 import BeautifulSoup
 
 # Identify RSS URLs and loop through them, extracting relevant information from each
-rss_url= ['https://feeds.feedburner.com/OilGasJournal-GeneralInterest', 'https://feeds.feedburner.com/OilGasJournal-ExplorationDevelopment'
-, 'https://feeds.feedburner.com/OilGasJournal-DrillingProduction' , 'https://feeds.feedburner.com/OilGasJournal-PipelinesTransportation', 
-'https://feeds.feedburner.com/OilGasJournal-RefiningProcessing']
+rss_url= ['https://www.ogj.com/__rss/website-scheduled-content.xml?input=%7B%22sectionAlias%22%3A%22general-interest%22%7D', 
+        'https://www.ogj.com/__rss/website-scheduled-content.xml?input=%7B%22sectionAlias%22%3A%22energy-transition%22%7D']
 
 df = pd.DataFrame(columns = ['title', 'link', 'published',  'summary', 'source'])
 
+url = 'https://www.ogj.com/__rss/website-scheduled-content.xml?input=%7B%22sectionAlias%22%3A%22energy-transition%22%7D'
+news_feed = feedparser.parse(url) 
 
+df_news=pd.json_normalize(news_feed.entries)
+
+print(df_news.columns)
 for i in rss_url:
     
     news_feed = feedparser.parse(i) 

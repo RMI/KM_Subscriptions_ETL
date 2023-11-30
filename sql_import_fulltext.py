@@ -19,7 +19,7 @@ rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel("C:/Users/ghoffman/OneDrive - RMI/Knowledge Resources/Manual Resource Submissions.xlsx")
 
-df = df[['id', 'title', 'pubDate', 'description', 'source','url', 'url_full_txt']]
+df = df[['id', 'title', 'pubDate', 'description', 'source','url', 'url_full_txt', 'request_email']]
 
 df = df[df['description'].notna()]
 
@@ -91,9 +91,9 @@ news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
             'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
-news = news[[ 'title', 'pubDate', 'url', 'description', 'source','adaptation','behavior', 'emissions', 
+news = news[[ 'title', 'pubDate', 'url', 'url_full_txt', 'description', 'source','adaptation','behavior', 'emissions', 
              'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
-             'tag_concat', 'tag_score']]
+             'tag_concat', 'tag_score', 'request_email']]
 
 ########### Title Format #############
 

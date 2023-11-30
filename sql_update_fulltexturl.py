@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import re
 import numpy as np
+from sqlalchemy import text
 
 ###### PURPOSE ############
 ###### Used to update full text urls in database at the end of each day and prior to the daily resource update
@@ -36,7 +37,7 @@ database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{
 
 
 with database_connection.connect() as conn:
-   conn.execute("delete from url_update")
+   conn.execute(text("delete from url_update"))
 
 url_update.to_sql(con=database_connection, name='url_update', if_exists='append', index=False)
 
