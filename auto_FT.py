@@ -52,6 +52,8 @@ for page in pages:
 
 sleep(2)
 
+driver.quit()
+
 # Create dataframes for each of the components above, then concatenate into a single dataframe.
 # Though inefficient, the multi-page layout of the news feed made this the only viable option.
 df_desc = pd.DataFrame(data_desc)
@@ -65,6 +67,7 @@ df_title = pd.DataFrame(data_title)
 df_title.columns = ['title']
 df_title = df_title[~df_title['title'].str.contains('FT Crossword')]
 df_title = df_title[~df_title['title'].str.contains('Quiz')]
+df_title['title'].replace(" Premium content", "", inplace=True)
 df_title['title'].replace("", pd.NA, inplace=True)
 df_title.dropna(subset=['title'], inplace=True)
 df_title.reset_index(drop=True, inplace=True)
@@ -81,5 +84,8 @@ df['source'] = 'Financial Times'
 df['url'] = 'https://www.ft.com/news-feed'
 df.drop_duplicates(subset=['title'], inplace=True)
 df = df[~df['title'].str.contains('Letter: ')]
+df['description'] = df['title'] + ' - ' + df['description']
 
 df.to_excel('Data/ft_data.xlsx')
+
+print('Financial Times data successfully extracted: ' + str(len(df)) + ' articles extracted')

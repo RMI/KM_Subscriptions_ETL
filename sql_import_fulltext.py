@@ -63,7 +63,8 @@ for i in tag_ref['tag_cat']:
 
 # Create concatenated tag variable
 news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']].fillna('').agg(','.join, axis=1)
+                         'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
+                         'Organizational Components']].fillna('').agg(','.join, axis=1)
 
 ### Create match score variable
 # Create id for unique article
@@ -71,7 +72,8 @@ news['uid'] = np.arange(0,len(news),1)
 
 # Transform tags to long format 
 score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']]
+                         'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
+                         'Organizational Components']]
 score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
 score['value'].replace('', np.nan, inplace=True)
 score = score.dropna()
@@ -89,11 +91,13 @@ news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
-            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'Climate Summits/Conferences':'climate_events', 
+                         'Organizational Components':'org_comp','tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
 news = news[[ 'title', 'pubDate', 'url', 'url_full_txt', 'description', 'source','adaptation','behavior', 'emissions', 
              'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
-             'tag_concat', 'tag_score', 'request_email']]
+             'climate_events','org_comp','tag_concat', 'tag_score', 'request_email']]
+
 
 ########### Title Format #############
 
@@ -149,3 +153,7 @@ df_import.to_sql(con=database_connection, name='portal_live', if_exists='append'
 
 # Close connections
 database_connection.dispose()
+
+conn.close()
+
+print('Full Text Import Complete: ' + str(len(df_import)) + ' articles imported')

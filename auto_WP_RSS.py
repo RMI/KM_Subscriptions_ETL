@@ -37,3 +37,5 @@ df_trim.drop_duplicates(subset=['title'], inplace=True)
 
 # Write out
 df_trim.to_excel('Data/WP_data.xlsx')
+
+print('Washington Post RSS Feed Data Extraction Complete: ' + str(len(df_trim)) + 'articles extracted')

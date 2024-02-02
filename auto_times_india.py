@@ -32,3 +32,5 @@ df.rename(columns={'link':'url', 'published':'pubDate', 'summary':'description'}
 
 #write out
 df.to_excel('Data/timesOfIndia_data.xlsx')
+
+print('Times of India RSS Feed Data Extraction Complete: ' + str(len(df)) + ' articles extracted')

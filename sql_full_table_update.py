@@ -8,12 +8,13 @@ from dotenv import load_dotenv
 import re
 import numpy as np
 from datetime import date
+from sqlalchemy import text
 
 ###### PURPOSE ############
 ###### Used to re-assign tags after implementing character limit on description ##########
 ####### Can be used to implement a recurring tag re-evaluation on the entire database ####
 
-#Load API credentials
+#Load  credentials
 load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
 rmi_ip = os.getenv('DBASE_IP')
@@ -28,7 +29,7 @@ database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{
 
 
 with database_connection.connect() as conn:
-    result = conn.execute("select * from portal_live")
+    result = conn.execute(text("select * from portal_live"))
     df1 = pd.DataFrame(result.fetchall())
     df1.columns = result.keys()
 
@@ -79,7 +80,8 @@ for i in tag_ref['tag_cat']:
 
 # Create concatenated tag variable
 news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']].fillna('').agg(','.join, axis=1)
+                         'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
+                         'Organizational Components']].fillna('').agg(','.join, axis=1)
 
 ### Create match score variable
 # Create id for unique article
@@ -87,7 +89,8 @@ news['uid'] = np.arange(0,len(news),1)
 
 # Transform tags to long format 
 score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']]
+                         'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
+                         'Organizational Components']]
 score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
 score['value'].replace('', np.nan, inplace=True)
 score = score.dropna()
@@ -105,19 +108,23 @@ news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
-            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory','Climate Summits/Conferences':'climate_events', 
+                         'Organizational Components':'org_comp', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
 news = news[['id', 'title', 'file_title','pubDate', 'url', 'creators', 'description', 'source', 'pubName', 'doi', 'journalID',
          'adaptation','behavior', 'emissions', 'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 
-         'technology', 'theory','tag_concat', 'tag_score', 'requested', 'request_date','flagship', 'url_full_txt', 'date_added', 'date_updated']]
+         'technology', 'theory','climate_events','org_comp','tag_concat', 'tag_score', 'requested', 'request_date','flagship', 
+         'url_full_txt', 'date_added', 'date_updated']]
 
 df = news
 
-df.to_excel('updated_news.xlsx')
+
+
+df.head(50).to_excel('updated_news.xlsx')
 
 # Delete all records from database
 with database_connection.connect() as conn:
-    result_del = conn.execute("delete from portal_live")
+    result_del = conn.execute(text("delete from portal_live"))
 
 
 

@@ -38,3 +38,5 @@ df.drop_duplicates(subset=['title'], inplace=True)
 
 # write out temp data file
 df.to_excel('Data/LAT_data.xlsx')
+
+print('LA Times RSS Feed Data Extraction Complete: ' + str(len(df)) + ' articles extracted')

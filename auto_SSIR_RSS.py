@@ -20,3 +20,5 @@ df_news_trim= df_news[['title', 'url', 'pubDate', 'description', 'source']]
 
 #write out
 df_news_trim.to_excel('Data/SSIR_data.xlsx')
+
+print('Stanford Social Innovation Review RSS Feed Data Extraction Complete: ' + str(len(df_news_trim)) + ' articles extracted')

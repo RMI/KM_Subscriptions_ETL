@@ -26,3 +26,5 @@ df_news_trim= df_news[['title', 'url', 'pubDate', 'description', 'source']]
 
 #write out
 df_news_trim.to_excel('Data/MIT_data.xlsx')
+
+print('MIT Sloan Management Review RSS Feed Data Extraction Complete: ' + str(len(df_news_trim)) + ' articles extracted')

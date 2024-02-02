@@ -26,7 +26,7 @@ exec(open("auto_EE_CarbonPulse_RSS.py").read())
 # Springer and Nature Journals
 exec(open('auto_Springer_API.py').read())
 # Washington Post
-exec(open('auto_WP_RSS.py').read())
+#exec(open('auto_WP_RSS.py').read())
 # Stanford Social Innovation Review
 exec(open('auto_SSIR_RSS.py').read())
 # New York Times and The New Yorker
@@ -43,7 +43,10 @@ exec(open('auto_LAT_RSS.py').read())
 exec(open('auto_elsevier_API.py').read())
 # Times of India RSS feed: Added 11/7/2023
 exec(open('auto_times_india.py').read())
-
+# The Guardian API: Added 12/12/2023
+exec(open('auto_guardian_API.py').read())
+# Sunday Times Africa RSS feed: Added 1/22/2024
+exec(open('auto_SundayTimes_RSS.py').read())
 
 #########################################################
 ################# Data Aggregation ######################
@@ -53,7 +56,7 @@ exec(open('auto_times_india.py').read())
 mydir = Path("Data/")
 
 # Create blank dataFrame to load new data
-df = pd.DataFrame(columns=['title', 'pubDate', 'url', 'creators', 'description', 'pubName', 'doi', 'journalID'])
+df = pd.DataFrame(columns=['title', 'pubDate', 'url', 'url_full_txt', 'creators', 'description', 'pubName', 'doi', 'journalID'])
 
 # Loop through data folder, appending any Excel files to df
 for file in mydir.glob('*.xlsx'):
@@ -101,7 +104,8 @@ for i in tag_ref['tag_cat']:
 
 # Create concatenated tag variable
 news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']].fillna('').agg(','.join, axis=1)
+                         'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
+                         'Organizational Components']].fillna('').agg(','.join, axis=1)
 
 ### Create match score variable
 # Create id for unique article
@@ -109,7 +113,8 @@ news['uid'] = np.arange(0,len(news),1)
 
 # Transform tags to long format 
 score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change']]
+                         'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
+                         'Organizational Components']]
 score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
 score['value'].replace('', np.nan, inplace=True)
 score = score.dropna()
@@ -127,12 +132,13 @@ news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
-            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+            'Sector':'sector', 'Technology':'technology','Theory of Change':'theory','Climate Summits/Conferences':'climate_events', 
+                         'Organizational Components':'org_comp', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
 
 
-news = news[[ 'title', 'pubDate', 'url', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
+news = news[[ 'title', 'pubDate', 'url', 'url_full_txt','creators', 'description', 'source','adaptation','behavior', 'emissions', 
              'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
-             'tag_concat', 'tag_score']]
+             'climate_events','org_comp','tag_concat', 'tag_score']]
 
 ########### Title Format #############
 

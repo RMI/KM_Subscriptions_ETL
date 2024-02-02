@@ -38,3 +38,5 @@ df_trim= df[['title', 'url', 'pubDate', 'creators', 'description', 'source']]
 
 # Write out
 df_trim.to_excel('Data/NYT_NYorker_data.xlsx')
+
+print('New York Times and The New Yorker RSS Feed Data Extraction Complete: ' + str(len(df_trim)) + 'articles extracted')

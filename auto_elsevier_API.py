@@ -70,3 +70,5 @@ df_entries.rename(columns={'dc:creator':'creators', 'prism:publicationName':'pub
 df_entries = df_entries[['source', 'url', 'title', 'creators', 'doi', 'pubName', 'pubDate', 'description']]
 
 df_entries.to_excel('Data/elsevier_data.xlsx')
+
+print('Elsevier Journal Data Extraction Complete: ' + str(len(df_entries)) + ' articles extracted')

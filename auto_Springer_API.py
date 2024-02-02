@@ -41,7 +41,7 @@ for i in url:
 
 # Drop duplicate articles
 df_entries = pd.concat(result_list)
-df_entries.drop_duplicates("doi")
+df_entries.drop_duplicates("doi", inplace=True)
 
 # Add source field, create useful url field, and rename variables to match master data fields
 df_entries['source'] = df_entries['publisher']
@@ -51,3 +51,5 @@ df_full1.rename(columns={'abstract':'description', 'publicationDate':'pubDate', 
 
 # Write out data
 df_full1.to_excel('Data/springer_data.xlsx')
+
+print('Springer Journal API Data Extraction Complete: ' + str(len(df_full1)) + ' articles extracted')

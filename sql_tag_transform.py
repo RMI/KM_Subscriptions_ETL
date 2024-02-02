@@ -25,7 +25,7 @@ database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{
 
 # Get existing wide tag content
 with database_connection.connect() as conn:
-    result = conn.execute(text("select id, adaptation,behavior, emissions, environment,finance,geography,industry, intervention, policy, sector, technology, theory from portal_live where tag_concat IS NOT NULL"))
+    result = conn.execute(text("select id, adaptation,behavior, emissions, environment,finance,geography,industry, intervention, policy, sector, technology, theory, climate_events, org_comp from portal_live where tag_concat IS NOT NULL"))
     df1 = pd.DataFrame(result.fetchall())
     df1.columns = result.keys()
 

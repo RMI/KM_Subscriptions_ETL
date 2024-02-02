@@ -70,3 +70,5 @@ except:
    
 #Closing the connection
 conn.close()
+
+print('Full Text URL Update Complete: ' + str(len(url_update)) + ' articles updated')

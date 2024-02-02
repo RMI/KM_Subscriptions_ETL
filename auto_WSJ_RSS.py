@@ -36,3 +36,5 @@ df.drop_duplicates(subset=['title'], inplace=True)
 
 # write out temp data file
 df.to_excel('Data/WSJ_data.xlsx')
+
+print('Wall St. Journal RSS Feed Data Extraction Complete: ' + str(len(df)) + ' articles extracted')

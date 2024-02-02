@@ -12,9 +12,9 @@ rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel('news_data.xlsx')
 
-df = df[[ 'title','file_title', 'pubDate', 'url', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
-             'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory',
-             'tag_concat', 'tag_score']]
+df = df[[ 'title','file_title', 'pubDate', 'url', 'url_full_txt', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
+             'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory','climate_events',
+             'org_comp','tag_concat', 'tag_score']]
 
 # connect to database
 config = {
@@ -60,3 +60,5 @@ df_import.to_sql(con=database_connection, name='portal_live', if_exists='append'
 # Close connections
 database_connection.dispose()
 conn.close()
+
+print('Database Import Complete: ' + str(len(df_import)) + ' articles imported')
