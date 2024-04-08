@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 import re
 import numpy as np
-
+from func_tagging import func_tagging
 ###### PURPOSE ############
 ###### Pull full-text additions from SharePoint Excel file, assign tags, and import to database
 ##### Description must be complete in the spreadsheet for the row to be tagged and imported. Null descriptions are excluded
@@ -27,67 +27,69 @@ df = df[df['description'].notna()]
 ################# Data Tagging ##########################
 #########################################################
 
-tag_ref = pd.read_excel('tags.xlsx', index_col = 'ID', dtype = str)
-tag_ref['phrase'] = tag_ref.phrase.str.lower()
+news = func_tagging(df)
 
-news = df
-news['description'].fillna(news['title'], inplace=True)
+# tag_ref = pd.read_excel('tags.xlsx', index_col = 'ID', dtype = str)
+# tag_ref['phrase'] = tag_ref.phrase.str.lower()
 
-# Generate average description length by source
-desc_len = news[['description', 'source']]
-desc_len['char_len'] = desc_len['description'].str.len()
-len_avg = desc_len.groupby(['source']).mean(numeric_only = True)
-# Average description length across sources
-char_limit = len_avg['char_len'].mean().round()
-char_limit = int(char_limit)
-# Institute 250 character minimum limit to make sure descriptions aren't limited to less than 250
-if char_limit < 250:
-  char_limit = 250 
+# news = df
+# news['description'].fillna(news['title'], inplace=True)
 
-# create a description field for tag matching in lower case and capped at average description length
-news['desc_match'] = news['description'].str[:char_limit].str.lower()
+# # Generate average description length by source
+# desc_len = news[['description', 'source']]
+# desc_len['char_len'] = desc_len['description'].str.len()
+# len_avg = desc_len.groupby(['source']).mean(numeric_only = True)
+# # Average description length across sources
+# char_limit = len_avg['char_len'].mean().round()
+# char_limit = int(char_limit)
+# # Institute 250 character minimum limit to make sure descriptions aren't limited to less than 250
+# if char_limit < 250:
+#   char_limit = 250 
+
+# # create a description field for tag matching in lower case and capped at average description length
+# news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
 
-# Define string matching function
-def get_matching_values(row, keywords):
-    matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
-    return ','.join(matching_values) if matching_values else ''
+# # Define string matching function
+# def get_matching_values(row, keywords):
+#     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
+#     return ','.join(matching_values) if matching_values else ''
 
-# Loop through descriptions, stringing together all matching tags
-for i in tag_ref['tag_cat']:
-    keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
-    keywords_tag = keywords_tag[['tag', 'phrase']]
-    keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
-    keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
-    news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
+# # Loop through descriptions, stringing together all matching tags
+# for i in tag_ref['tag_cat']:
+#     keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
+#     keywords_tag = keywords_tag[['tag', 'phrase']]
+#     keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
+#     keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
+#     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
-# Create concatenated tag variable
-news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
-                         'Organizational Components']].fillna('').agg(','.join, axis=1)
+# # Create concatenated tag variable
+# news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+#                          'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
+#                          'Organizational Components']].fillna('').agg(','.join, axis=1)
 
-### Create match score variable
-# Create id for unique article
-news['uid'] = np.arange(0,len(news),1)
+# ### Create match score variable
+# # Create id for unique article
+# news['uid'] = np.arange(0,len(news),1)
 
-# Transform tags to long format 
-score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
-                         'Organizational Components']]
-score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
-score['value'].replace('', np.nan, inplace=True)
-score = score.dropna()
-# Create count of tag categories
-tag_score = score.groupby('uid')['value'].count()
-# Join score back to news df
-news = news.join(tag_score, on='uid')
+# # Transform tags to long format 
+# score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+#                          'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
+#                          'Organizational Components']]
+# score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
+# score['value'].replace('', np.nan, inplace=True)
+# score = score.dropna()
+# # Create count of tag categories
+# tag_score = score.groupby('uid')['value'].count()
+# # Join score back to news df
+# news = news.join(tag_score, on='uid')
 
-# Remove duplicate and trailing commas from null tags
-pattern = re.compile(r',{2,}')
-news['tag'].replace(pattern, ',', regex = True, inplace = True)
+# # Remove duplicate and trailing commas from null tags
+# pattern = re.compile(r',{2,}')
+# news['tag'].replace(pattern, ',', regex = True, inplace = True)
 
-pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-news['tag'].replace(pattern, '', regex = True, inplace = True)
+# pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
+# news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 

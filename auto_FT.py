@@ -13,6 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from datetime import date
 from webdriver_auto_update.webdriver_auto_update import WebdriverAutoUpdate
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Create empty lists
 data_desc=[]
@@ -26,9 +27,8 @@ driver_directory = "C:/Users/ghoffman/OneDrive - RMI/01. Projects/Python_General
 # Create an instance of WebdriverAutoUpdate
 driver_manager = WebdriverAutoUpdate(driver_directory)
 # Call the main method to manage chromedriver
-driver_manager.main()
+#driver_manager.main()
 
-from webdriver_manager.chrome import ChromeDriverManager
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 # Open each of the first 4 pages of FT News Page, extract the html, and extract the relevant information

@@ -30,6 +30,8 @@ p_sep = "</p>"
 p_str = '<p>'
 df['summary'] = df['summary'].str.replace(p_sep, '', regex=False)
 df['summary'] = df['summary'].str.replace(p_str, '', regex=False)
+df['summary'] = df['summary'].str.strip()
+df['summary'] = df['title'] + '. ' + df['summary'] 
 df.rename(columns={'link':'url', 'summary':'description'},inplace=True)
 df = df[['title', 'url', 'description', 'creators', 'pubDate', 'source']]
 

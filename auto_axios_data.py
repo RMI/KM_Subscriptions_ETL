@@ -58,13 +58,15 @@ df.loc[df['deal_size'].astype(str).str.contains(r'CDN\$', regex=True), 'deal_cur
 df.loc[df['deal_size'].astype(str).str.contains(r'AUS\$', regex=True), 'deal_currency'] = 'AUS'
 #df.loc[df['deal_size'].astype(str).str.contains(r'\\£', regex=True), 'deal_currency'] = 'GBP'
 df.loc[df['deal_size'].astype(str).str.contains(r'\xA3', regex=True), 'deal_currency'] = 'GBP'
+df.loc[df['deal_size'].astype(str).str.contains(r'\xA5', regex=True), 'deal_currency'] = 'JPY'
 df.loc[df['deal_size'].astype(str).str.contains('None'), 'deal_currency']= 'None'
 
 
 df['deal_trim'] = df['deal_size']
 
 df['deal_trim'] = df['deal_trim'].str.replace('None', '0').str.replace('AUS', "").str.replace(r'\$', "", regex=True).str.replace(
-    'US', "").str.replace('CDN', "").str.replace(r'\u20ac', "", regex=True).str.replace(r'\xA3', "", regex=True).str.strip()
+    'US', "").str.replace('CDN', "").str.replace(r'\u20ac', "", regex=True).str.replace(r'\xA3', "", regex=True).str.replace(
+        r'\xA5',"", regex=True).str.strip()
 
 # Create the conversion function
 def converter(x):

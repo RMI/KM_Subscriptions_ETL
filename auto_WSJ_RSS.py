@@ -29,6 +29,7 @@ df['source'] = 'Wall St. Journal'
 df['creators'] = ''
 df['pubDate'] = pd.to_datetime(df['published'])
 df['pubDate']= df['pubDate'].dt.date
+df['summary'] = df['title'] + '. ' + df['summary']
 df.rename(columns={'link':'url', 'summary':'description'},inplace=True)
 
 # drop duplicate titles

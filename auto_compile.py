@@ -9,6 +9,42 @@ import numpy as np
 import re
 import win32com.client
 import time
+import os
+from dotenv import load_dotenv
+import sqlalchemy
+from sqlalchemy import text
+
+
+
+#Load database credentials
+load_dotenv('cred.env')
+rmi_db = os.getenv('DBASE_PWD')
+rmi_ip = os.getenv('DBASE_IP')
+
+database_username = 'rmiadmin'
+database_password = rmi_db
+database_ip       = rmi_ip
+database_name     = 'rmi_km_news'
+database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
+                                               format(database_username, database_password, 
+                                                      database_ip, database_name))
+
+
+# confirm database connection
+connection = database_connection.connect()
+metadata = sqlalchemy.MetaData()
+portal_live = sqlalchemy.Table('portal_live', metadata, autoload_with=database_connection)
+
+check = list(portal_live.columns.keys())
+
+if len(check) > 0:  
+    print('Database connection confirmed')
+    connection.close() 
+else:
+    print('Database connection failed')
+    exit()
+
+
 
 
 #### Add new full text urls to the database
@@ -26,7 +62,7 @@ exec(open("auto_EE_CarbonPulse_RSS.py").read())
 # Springer and Nature Journals
 exec(open('auto_Springer_API.py').read())
 # Washington Post
-#exec(open('auto_WP_RSS.py').read())
+exec(open('auto_WP_RSS.py').read())
 # Stanford Social Innovation Review
 exec(open('auto_SSIR_RSS.py').read())
 # New York Times and The New Yorker
@@ -66,69 +102,87 @@ for file in mydir.glob('*.xlsx'):
 # write out df, 
 df.to_excel('news_data_pretag.xlsx')
 
+
+from func_tagging import func_tagging
+
+news = func_tagging(df)
+
+
 #########################################################
 ################# Data Tagging ##########################
 #########################################################
 
-tag_ref = pd.read_excel('tags.xlsx',  index_col="ID", dtype= str)
-tag_ref['phrase'] = tag_ref.phrase.str.lower()
+# tag_ref = pd.read_excel('tags.xlsx',  index_col="ID", dtype= str)
 
-news = df
-news['description'].fillna(news['title'], inplace=True)
+# Updated to pull from database instead of local file
 
-# Generate average description length by source
-desc_len = news[['description', 'source']]
-desc_len['char_len'] = desc_len['description'].str.len()
-len_avg = desc_len.groupby(['source']).mean(numeric_only = True)
-# Average description length across sources
-char_limit = len_avg['char_len'].mean().round()
-char_limit = int(char_limit)
-# create a description field for tag matching in lower case and capped at average description length
-news['desc_match'] = news['description'].str[:char_limit].str.lower()
+# with database_connection.connect() as conn:
+#     result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags"))
+#     df1 = pd.DataFrame(result.fetchall())
+#     df1.columns = result.keys()
 
-##################################################33
-##############################################################
+# tag_ref = df1
 
-# Define string matching function
-def get_matching_values(row, keywords):
-    matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
-    return ','.join(matching_values) if matching_values else ''
+# tag_ref['phrase'] = tag_ref.phrase.str.lower()
 
-# Loop through descriptions, stringing together all matching tags
-for i in tag_ref['tag_cat']:
-    keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
-    keywords_tag = keywords_tag[['tag', 'phrase']]
-    keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
-    keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
-    news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
+# news = df
+# news['description'].fillna(news['title'], inplace=True)
 
-# Create concatenated tag variable
-news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
-                         'Organizational Components']].fillna('').agg(','.join, axis=1)
+# # concatenate title and description for tag matching
+# news['description'] = news['title'] + "." + news['description']
 
-### Create match score variable
-# Create id for unique article
-news['uid'] = np.arange(0,len(news),1)
+# # Generate average description length by source
+# desc_len = news[['description', 'source']]
+# desc_len['char_len'] = desc_len['description'].str.len()
+# len_avg = desc_len.groupby(['source']).mean(numeric_only = True)
+# # Average description length across sources
+# char_limit = len_avg['char_len'].mean().round()
+# char_limit = int(char_limit)
+# # create a description field for tag matching in lower case and capped at average description length
+# news['desc_match'] = news['description'].str[:char_limit].str.lower()
 
-# Transform tags to long format 
-score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-                         'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
-                         'Organizational Components']]
-score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
-score['value'].replace('', np.nan, inplace=True)
-score = score.dropna()
-# Create count of tag categories
-tag_score = score.groupby('uid')['value'].count()
-# Join score back to news df
-news = news.join(tag_score, on='uid')
+# ##################################################33
+# ##############################################################
+# # Define string matching function
+# def get_matching_values(row, keywords):
+#     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
+#     return ','.join(matching_values) if matching_values else ''
 
-# Remove duplicate and trailing commas from null tags
-pattern = re.compile(r',{2,}')
-news['tag'].replace(pattern, ',', regex = True, inplace = True)
+# # Loop through descriptions, stringing together all matching tags
+# for i in tag_ref['tag_cat']:
+#     keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
+#     keywords_tag = keywords_tag[['tag', 'phrase']]
+#     keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
+#     keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
+#     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
-pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-news['tag'].replace(pattern, '', regex = True, inplace = True)
+# # Create concatenated tag variable
+# news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+#                          'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
+#                          'Organizational Components']].fillna('').agg(','.join, axis=1)
+
+# ### Create match score variable
+# # Create id for unique article
+# news['uid'] = np.arange(0,len(news),1)
+
+# # Transform tags to long format 
+# score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
+#                          'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
+#                          'Organizational Components']]
+# score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
+# score['value'].replace('', np.nan, inplace=True)
+# score = score.dropna()
+# # Create count of tag categories
+# tag_score = score.groupby('uid')['value'].count()
+# # Join score back to news df
+# news = news.join(tag_score, on='uid')
+
+# # Remove duplicate and trailing commas from null tags
+# pattern = re.compile(r',{2,}')
+# news['tag'].replace(pattern, ',', regex = True, inplace = True)
+
+# pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
+# news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
@@ -155,6 +209,8 @@ news.drop_duplicates("title", inplace=True)
 
 #Trim description and creator fields to match 5000 and 1000 char limits
 news['title'] = news['title'].str[:498]
+# trim whitespace from title
+news['title'] = news['title'].str.strip()
 news['description'] = news['description'].str[:4998]
 news['creators'] = news['creators'].str[:998]
 
@@ -206,3 +262,9 @@ wb.Close()
 # Quit
 xlapp.Quit()
 
+
+# delete all .json files in the Data folder
+mydir = Path("tempdata/articles")
+
+for file in mydir.glob('*.json'):
+    os.remove(file)
