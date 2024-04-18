@@ -6,6 +6,8 @@ from datetime import date
 from sqlalchemy import text
 import re
 
+run_type = 'newsroom'
+
 def tag_transform(run_type):
 
     file = 'Data/backups/tag_import' + str(date.today()) + '.xlsx'
@@ -185,6 +187,10 @@ def tag_transform(run_type):
     # Write out backup and import to MySQL
     df_import_f2.to_excel(file)
 
+    # drop tag_cat_y and rename tag_cat_x to tag_cat
+    df_import_f2 = df_import_f2.drop(['tag_cat_y'], axis=1)
+    df_import_f2.rename(columns={'tag_cat_x':'tag_cat'}, inplace=True)
+
 
     df_import_f2.to_sql(con=database_connection, name='portal_content_tags', if_exists='append', index=False)
 
@@ -192,7 +198,7 @@ def tag_transform(run_type):
     with database_connection.connect() as conn:
         for index, row in tag_profiles.iterrows():
             conn.execute(text("update portal_live set profiles = :cost_center where id = :content_id"), {'cost_center' : row['cost_center'], 'content_id' : row['content_id']})
-            conn.commit()
+           # conn.commit()
 
     # Close connections
     database_connection.dispose()
