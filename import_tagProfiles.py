@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import sqlalchemy
 from pathlib import Path
 from sqlalchemy import text
+from datetime import date
 
 #Load database credentials
 load_dotenv('cred.env')
@@ -38,7 +39,7 @@ df.to_excel('profiles.xlsx')
 
 # Pull all tags from database
 with database_connection.connect() as conn:
-    result = conn.execute(text("select guid, tag from content_tags"))
+    result = conn.execute(text("select guid, tag from ref_content_tags"))
     df1 = pd.DataFrame(result.fetchall())
     df1.columns = result.keys()
 
@@ -59,3 +60,7 @@ df2.drop_duplicates(subset=['tag_guid'], inplace=True)
 
 # write to database
 df2.to_sql('tag_profiles', con=database_connection, if_exists='append', index=False)
+
+# move excel files to archive folder
+for file in mydir.glob('*.xlsx'):
+    file.rename('Tag_Profiles/archive/' + file.name + 'imported' + date.today().strftime('%Y%m%d') + '.xlsx')

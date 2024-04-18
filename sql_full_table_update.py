@@ -9,7 +9,7 @@ import re
 import numpy as np
 from datetime import date
 from sqlalchemy import text
-from func_tagging import func_tagging
+from func_tagging import func_tagging, get_tags
 
 
 ###### PURPOSE ############
@@ -31,16 +31,27 @@ database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{
 
 
 with database_connection.connect() as conn:
-    result = conn.execute(text("select id, title, source, description from portal_live"))
+    result = conn.execute(text("select id, title, source, description from portal_live where tag_score IS NOT NULL and pubDate > '2024-01-01'"))
     df1 = pd.DataFrame(result.fetchall())
     df1.columns = result.keys()
 
 
-name = 'Data/backups/database_backup'+ str(date.today()) + '.csv'
-df1.to_csv(name)
+# name = 'Data/backups/database_backup'+ str(date.today()) + '.csv'
+# df1.to_csv(name)
 df = df1
 
+print(len(df))
+
+# Get tag ref
+
+
+
+tag_ref = get_tags()
+
+print(tag_ref)
+print(tag_ref.head())
 #df_testing = df1[0:1000]
+
 
 #df = df_testing
 # Manaul backup import
@@ -52,15 +63,17 @@ df = df1
 
 ###################
 
-# with database_connection.connect() as conn:
-#     result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags where newsroom = 'Yes'"))
-#     df1 = pd.DataFrame(result.fetchall())
-#     df1.columns = result.keys()
+with database_connection.connect() as conn:
+    result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags where newsroom = 'Yes'"))
+    df1 = pd.DataFrame(result.fetchall())
+    df1.columns = result.keys()
 
-# tag_ref = df1
+tag_ref = df1
 
-# # tag_ref = pd.read_excel('tags.xlsx', index_col = 'ID', dtype = str)
-# tag_ref['phrase'] = tag_ref.phrase.str.lower()
+# tag_ref = pd.read_excel('tags.xlsx', index_col = 'ID', dtype = str)
+tag_ref['phrase'] = tag_ref.phrase.str.lower()
+
+print(tag_ref.head())
 
 # news = df
 # news['description'].fillna(news['title'], inplace=True)
@@ -81,14 +94,13 @@ df = df1
 #     return ','.join(matching_values) if matching_values else ''
 
 # subset news df for testing to 2000 rows
-# df = df[0:2000]
-
 # Create output df
+
 news_output = pd.DataFrame()
 
 # batch news into groups of 1000 rows
 length = len(df)
-batch = 1000
+batch = 500
 batches = length // batch
 if length % batch != 0:
     batches += 1
@@ -99,7 +111,7 @@ for i in range(batches):
     end = (i + 1) * batch
     news_sub = df[start:end]
 
-    func_tagging(news_sub)
+    news = func_tagging(news_sub)
 
     # # Loop through descriptions, stringing together all matching tags
     # for i in tag_ref['tag_cat']:
@@ -110,113 +122,62 @@ for i in range(batches):
     #     news_sub[i] = news_sub['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
 
     # append to output   
-    news_output = pd.concat([news_output, news_sub])
+    news_output = pd.concat([news_output, news], axis=0, ignore_index=True)
+    print(len(news_output))
 
-print(news_output.head(50))
-print(news_output.columns)
-print(len(news_output[news_output['tag_concat'] != '']))
-print(len(news_output))
-news = news_output
-
-    # # Create concatenated tag variable
-    # news_sub['tag'] = news_sub[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-    #                          'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
-    #                          'Organizational Components']].fillna('').agg(','.join, axis=1)
-
-    # ### Create match score variable
-    # # Create id for unique article
-    # news_sub['uid'] = np.arange(0,len(news_sub),1)
-
-    # # Transform tags to long format 
-    # score_sub = news_sub[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-    #                          'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
-    #                          'Organizational Components']]
-    # score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
-    # score['value'].replace('', np.nan, inplace=True)
-    # score = score.dropna()
-    # # Create count of tag categories
-    # tag_score = score.groupby('uid')['value'].count()
-    # # Join score back to news df
-    # news_sub = news_sub.join(tag_score, on='uid')
-
-    # # Remove duplicate and trailing commas from null tags
-    # pattern = re.compile(r',{2,}')
-    # news_sub['tag'].replace(pattern, ',', regex = True, inplace = True)
-
-    # pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-    # news_sub['tag'].replace(pattern, '', regex = True, inplace = True)
-
-    # news_sub.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions
-
-# Loop through descriptions, stringing together all matching tags
-# for i in tag_ref['tag_cat']:
-#     keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
-#     keywords_tag = keywords_tag[['tag', 'phrase']]
-#     keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
-#     keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
-#     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
-
-# print(news.columns)
-# # Create concatenated tag variable
-# news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-#                          'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
-#                          'Organizational Components']].fillna('').agg(','.join, axis=1)
-
-# # news = news[['id', 'title', 'file_title','pubDate', 'url', 'creators', 'description', 'source', 'pubName', 'doi', 'journalID',
-# #          'adaptation','behavior', 'emissions', 'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 
-# #          'technology', 'theory','climate_events','org_comp','tag_concat', 'tag_score', 'requested', 'request_date','flagship', 
-# #          'url_full_txt', 'date_added', 'date_updated']]
-
-# ### Create match score variable
-# # Create id for unique article
-# news['uid'] = np.arange(0,len(news),1)
-
-# # Transform tags to long format 
-# score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-#                          'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
-#                          'Organizational Components']]
-# score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
-# score['value'].replace('', np.nan, inplace=True)
-# score = score.dropna()
-# # Create count of tag categories
-# tag_score = score.groupby('uid')['value'].count()
-# # Join score back to news df
-# news = news.join(tag_score, on='uid')
-
-# # Remove duplicate and trailing commas from null tags
-# pattern = re.compile(r',{2,}')
-# news['tag'].replace(pattern, ',', regex = True, inplace = True)
-
-# pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-# news['tag'].replace(pattern, '', regex = True, inplace = True)
 
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
             'Sector':'sector', 'Technology':'technology','Theory of Change':'theory','Climate Summits/Conferences':'climate_events', 
-                         'Organizational Components':'org_comp', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+                         'Organizational Components':'org_comp','Current Issues':'current_issues', 'tag':'tag_concat', 'value':'tag_score'}, inplace=True)
+
 
 news = news[['id', 'title', 'description', 'source',
          'adaptation','behavior', 'emissions', 'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 
-         'technology', 'theory','climate_events','org_comp','tag_concat', 'tag_score']]
+         'technology', 'theory','climate_events','org_comp', 'current_issues', 'tag_concat', 'tag_score']]
+
 
 # filter to only those with tags
 news = news[news['tag_concat'] != '']
+
 
 # Delete all records from database
 # with database_connection.connect() as conn:
 #     result_del = conn.execute(text("delete from portal_live"))
 
+
 df = news
 
+
+# change tag_score to integer
+df['tag_score'] = df['tag_score'].astype(int)
+
+
+# batch df into groups of 1000 rows
+#length = len(df)
+
+batch = 500
+batches = length // batch
+if length % batch != 0:
+    batches += 1
+
+# Loop through batches
+for i in range(batches):
+    start = i * batch
+    end = (i + 1) * batch
+    news_sub = df[start:end]
+
+    # Write the dataframe to the database
 with database_connection.connect() as conn:
     for index, row in df.iterrows():
-        result = conn.execute(text("update portal_live set tag_concat = :tag_concat, tag_score = :tag_score where id = :id"), 
-                     {'tag_concat' : row['tag_concat'], 'id' : row['id'], 'tag_score' : row['tag_score']})
-        # conn.commit()
+        conn.execute(text("update portal_live set current_issues = :current_issues, tag_concat = :tag_concat, tag_score = :tag_score where id = :id"), 
+                    {'current_issues': row['current_issues'], 'tag_concat' : row['tag_concat'], 'id' : row['id'], 'tag_score' : row['tag_score']})
+      #  conn.commit()
 
+conn.close()
+database_connection.dispose()
 
 # df.to_sql(con=database_connection, name='portal_live', if_exists='append', index=False)
 
 # Close connections
-conn.close()
-database_connection.dispose()
+

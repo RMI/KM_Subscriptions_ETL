@@ -13,7 +13,11 @@ import os
 from dotenv import load_dotenv
 import sqlalchemy
 from sqlalchemy import text
+from func_tagging import func_tagging
+from func_tag_transform import tag_transform
 
+# Select research or newsroom only
+run_type = 'newsroom'
 
 
 #Load database credentials
@@ -43,9 +47,6 @@ if len(check) > 0:
 else:
     print('Database connection failed')
     exit()
-
-
-
 
 #### Add new full text urls to the database
 exec(open('sql_update_fulltexturl.py').read())
@@ -103,87 +104,10 @@ for file in mydir.glob('*.xlsx'):
 df.to_excel('news_data_pretag.xlsx')
 
 
-from func_tagging import func_tagging
-
+# apply tags to data
 news = func_tagging(df)
 
-
-#########################################################
-################# Data Tagging ##########################
-#########################################################
-
-# tag_ref = pd.read_excel('tags.xlsx',  index_col="ID", dtype= str)
-
-# Updated to pull from database instead of local file
-
-# with database_connection.connect() as conn:
-#     result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags"))
-#     df1 = pd.DataFrame(result.fetchall())
-#     df1.columns = result.keys()
-
-# tag_ref = df1
-
-# tag_ref['phrase'] = tag_ref.phrase.str.lower()
-
-# news = df
-# news['description'].fillna(news['title'], inplace=True)
-
-# # concatenate title and description for tag matching
-# news['description'] = news['title'] + "." + news['description']
-
-# # Generate average description length by source
-# desc_len = news[['description', 'source']]
-# desc_len['char_len'] = desc_len['description'].str.len()
-# len_avg = desc_len.groupby(['source']).mean(numeric_only = True)
-# # Average description length across sources
-# char_limit = len_avg['char_len'].mean().round()
-# char_limit = int(char_limit)
-# # create a description field for tag matching in lower case and capped at average description length
-# news['desc_match'] = news['description'].str[:char_limit].str.lower()
-
-# ##################################################33
-# ##############################################################
-# # Define string matching function
-# def get_matching_values(row, keywords):
-#     matching_values = {keywords_to_tag[keyword] for keyword in keywords if row.lower().find(keyword) != -1}
-#     return ','.join(matching_values) if matching_values else ''
-
-# # Loop through descriptions, stringing together all matching tags
-# for i in tag_ref['tag_cat']:
-#     keywords_tag = tag_ref[tag_ref['tag_cat'] == i]
-#     keywords_tag = keywords_tag[['tag', 'phrase']]
-#     keywords_tag.rename(columns={"phrase":"keyword"}, inplace=True)
-#     keywords_to_tag = keywords_tag.set_index('keyword')['tag'].to_dict()
-#     news[i] = news['desc_match'].apply(get_matching_values, keywords= keywords_to_tag.keys())
-
-# # Create concatenated tag variable
-# news['tag'] = news[['Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-#                          'Policy', 'Sector', 'Technology', 'Theory of Change', 'Climate Summits/Conferences', 
-#                          'Organizational Components']].fillna('').agg(','.join, axis=1)
-
-# ### Create match score variable
-# # Create id for unique article
-# news['uid'] = np.arange(0,len(news),1)
-
-# # Transform tags to long format 
-# score_sub = news[['uid','Adaptation', 'Behavior', 'Emissions', 'Environment', 'Finance','Geography', 'Industry' ,'Intervention',
-#                          'Policy', 'Sector', 'Technology', 'Theory of Change','Climate Summits/Conferences', 
-#                          'Organizational Components']]
-# score = score_sub.melt(id_vars = ['uid'], ignore_index=False).reset_index()
-# score['value'].replace('', np.nan, inplace=True)
-# score = score.dropna()
-# # Create count of tag categories
-# tag_score = score.groupby('uid')['value'].count()
-# # Join score back to news df
-# news = news.join(tag_score, on='uid')
-
-# # Remove duplicate and trailing commas from null tags
-# pattern = re.compile(r',{2,}')
-# news['tag'].replace(pattern, ',', regex = True, inplace = True)
-
-# pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-# news['tag'].replace(pattern, '', regex = True, inplace = True)
-
+# rename columns and subset
 news.rename(columns={'Adaptation':'adaptation','Behavior':'behavior', 'Emissions':'emissions', 'Environment':'environment', 
             'Finance':'finance','Geography':'geography','Industry':'industry', 'Intervention':'intervention', 'Policy':'policy', 
             'Sector':'sector', 'Technology':'technology','Theory of Change':'theory','Climate Summits/Conferences':'climate_events', 
@@ -202,7 +126,7 @@ news = news[news['title'].notnull()]
 # Replace special characters that can create problems when adding full text to SharePoint
 news['file_title'] = news['title'].str.replace('[\/<>*"?|]', "", regex=True)
 news['file_title'] = news['file_title'].str.replace('[:]', "-", regex=True)
-news['file_title'] = news['file_title'].str[:125]
+news['file_title'] = news['file_title'].str[:125].str.strip()
 
 # Drop duplicate titles
 news.drop_duplicates("title", inplace=True)
@@ -213,6 +137,10 @@ news['title'] = news['title'].str[:498]
 news['title'] = news['title'].str.strip()
 news['description'] = news['description'].str[:4998]
 news['creators'] = news['creators'].str[:998]
+
+# add request url for full text
+news['url_request'] = 'https://apps.powerapps.com/play/e/default-8ed8a585-d8e6-4b00-b9cc-d370783559f6/a/1e7fab62-974b-4a8c-8d40-b002ba18a5a9?art=' + news['file_title']
+
 
 news.to_excel('news_data.xlsx')
 
@@ -238,7 +166,8 @@ exec(open('sql_import_fulltext.py').read())
 ######## Note: Used for metrics dashboard only ##########
 #########################################################
 
-exec(open('sql_tag_transform.py').read())
+#exec(open('sql_tag_transform.py').read())
+tag_transform(run_type=run_type)
 
 #####################################################################################
 #### Update Data Connection in Available Resources Excel File #######################

@@ -4,14 +4,15 @@
 # The function takes a dataframe of news articles as input and returns a dataframe with tags appended to the news articles. 
 # The function uses a reference table of keywords and tags to match keywords in the news articles and assign corresponding tags. 
 # The function also calculates a match score for each news article based on the number of tags assigned.
-
 import pandas as pd
-import numpy as np
-import re
 import sqlalchemy
 from sqlalchemy import text
 from dotenv import load_dotenv
 import os
+import numpy as np
+import re
+
+
 
 def func_tagging(df):
 
@@ -24,20 +25,13 @@ def func_tagging(df):
     database_ip       = rmi_ip
     database_name     = 'rmi_km_news'
     database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
-                                                format(database_username, database_password, 
-                                                        database_ip, database_name))
-
-
-    #########################################################
-    ################# Data Tagging ##########################
-    #########################################################
-
-    # Updated to pull from database instead of local file
-
+                                                 format(database_username, database_password, 
+                                                         database_ip, database_name))
+        
     with database_connection.connect() as conn:
-        result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags where newsroom = 'Yes'"))
-        df1 = pd.DataFrame(result.fetchall())
-        df1.columns = result.keys()
+         result = conn.execute(text("select tag_cat, tag, phrase from ref_content_tags where newsroom = 'Yes'"))
+         df1 = pd.DataFrame(result.fetchall())
+         df1.columns = result.keys()
 
     tag_ref = df1
 

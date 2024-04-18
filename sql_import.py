@@ -12,7 +12,7 @@ rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel('news_data.xlsx')
 
-df = df[[ 'title','file_title', 'pubDate', 'url', 'url_full_txt', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
+df = df[[ 'title','file_title', 'pubDate', 'url', 'url_full_txt', 'url_request', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
              'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory','climate_events',
              'org_comp','tag_concat', 'tag_score']]
 
