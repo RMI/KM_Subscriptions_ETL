@@ -5,10 +5,10 @@
 
 import pandas as pd
 from pathlib import Path
-import numpy as np
-import re
+#import numpy as np
+#import re
 import win32com.client
-import time
+#import time
 import os
 from dotenv import load_dotenv
 import sqlalchemy
@@ -17,8 +17,8 @@ from func_tagging import func_tagging
 from func_tag_transform import tag_transform
 
 # Select research or newsroom only
-run_type = 'newsroom'
-
+#run_type = 'newsroom'
+run_type = 'research'
 
 #Load database credentials
 load_dotenv('cred.env')
@@ -144,6 +144,7 @@ news['url_request'] = 'https://apps.powerapps.com/play/e/default-8ed8a585-d8e6-4
 
 news.to_excel('news_data.xlsx')
 
+
 #########################################################
 ################# Data Import ###########################
 #########################################################
@@ -167,12 +168,13 @@ exec(open('sql_import_fulltext.py').read())
 #########################################################
 
 #exec(open('sql_tag_transform.py').read())
-tag_transform(run_type=run_type)
+tag_transform()
 
 #####################################################################################
 #### Update Data Connection in Available Resources Excel File #######################
 #### Used instead of the section above because file needs to stay in table format ###
 #####################################################################################
+
 
 # Start an instance of Excel
 xlapp = win32com.client.DispatchEx("Excel.Application")
@@ -187,7 +189,8 @@ wb.RefreshAll()
 xlapp.CalculateUntilAsyncQueriesDone()
 xlapp.DisplayAlerts = False
 wb.Save()
-wb.Close()
+wb.Close(True)
+del(wb)
 # Quit
 xlapp.Quit()
 

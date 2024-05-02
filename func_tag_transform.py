@@ -6,9 +6,8 @@ from datetime import date
 from sqlalchemy import text
 import re
 
-run_type = 'newsroom'
 
-def tag_transform(run_type):
+def tag_transform():
 
     file = 'Data/backups/tag_import' + str(date.today()) + '.xlsx'
     ###### PURPOSE ############
@@ -57,7 +56,7 @@ def tag_transform(run_type):
     df_import_f2 = df_import_f2[df_import_f2['tag'].notnull()]
     df_import_f2 = df_import_f2[df_import_f2['tag'] != '']
     df_import_f2.rename(columns={'id':'content_id'}, inplace=True)
-    df_import_f2 = df_import_f2.drop('tag_count', axis=1)
+    df_import_f2 = df_import_f2.drop(columns={'tag_cat','tag_count'}, axis=1)
 
     # Add tag GUID from database
     with database_connection.connect() as conn:
@@ -77,59 +76,12 @@ def tag_transform(run_type):
         df_tag_prog = pd.DataFrame(result.fetchall())
         df_tag_prog.columns = result.keys()
 
+    # drop oil refining and RMI cost center
+    df_tag_prog = df_tag_prog[df_tag_prog['cost_center'] != 'RMI']
+    df_tag_prog = df_tag_prog[df_tag_prog['cost_center'] != 'Oil Refining']
+
     # Merge tag profiles to tag data, keeping all matches
     df_import_f2 = pd.merge(df_import_f2, df_tag_prog, how='outer', left_on='guid', right_on='tag_guid')
-
-
-    if run_type == 'research':
-
-    # identify content_id with combination of tag_guids
-        profile_noConflict = df_tag_prog[df_tag_prog['cost_center'] == 'Oil Refining']['tag_guid'].tolist()
-
-        conflictTags = df_tag_id[df_tag_id['tag_cat'] == 'Current Issues']['guid'].tolist()
-
-        # remove tags in combo2 from combo
-        for i in profile_noConflict:
-            if i in conflictTags:
-                profile_noConflict.remove(i)
-
-        # identify content with at least one tag from profile and one from current events
-        df_import_f2['profileTag'] = df_import_f2['tag_guid'].isin(profile_noConflict)
-        df_import_f2['conflictTag'] = df_import_f2['tag_guid'].isin(conflictTags)
-
-        # create a new column to identify content_id with at least one tag from combo and one from combo2, grouped by content_id
-        df_import_f2['tag_match'] = df_import_f2.groupby('content_id')['profileTag'].transform('any') & df_import_f2.groupby('content_id')['conflictTag'].transform('any')
-
-
-        #print(df_import_f2[df_import_f2['tag_match'] == True].sort_values(by='content_id'))
-
-        # filter to only content_id where tag_match is True
-        oil_intel = df_import_f2[df_import_f2['tag_match'] == True]
-
-        # filter to unique content_id
-        oil_intel = oil_intel.drop_duplicates(subset=['content_id'])
-
-        oil = oil_intel['content_id'].tolist()
-
-        # get title, source, content_id, and tag_contact from database for content_id in oil_intel
-        df = pd.DataFrame()
-
-        with database_connection.connect() as conn:
-            for i in oil:
-                result = conn.execute(text("select id, title, source, pubDate, tag_concat from portal_live where id =" + str(i)))
-                intel = pd.DataFrame(result.fetchall())
-                intel.columns = result.keys()
-                df = pd.concat([df, intel], axis=0)
-
-        df.to_excel('Data/oil_intel' + str(date.today()) + '.xlsx')
-
-        # Where there is a match, create a new column with the matching tags, grouped by content_id
-        #df_import_f2['matching_tags'] = df_import_f2[df_import_f2['combo_match'] == True].groupby('content_id')['tag'].transform(lambda x: ', '.join(x))
-
-
-        #print(df_import_f2[df_import_f2['combo_match'] == True].sort_values(by='content_id'))
-
-
 
     ###################
     # drop rows with null content_id
@@ -175,23 +127,28 @@ def tag_transform(run_type):
     # drop null cost_center
     tag_profiles = tag_profiles[tag_profiles['cost_center'] != '']
 
-    # drop oil refining cost center
-    tag_profiles = tag_profiles[tag_profiles['cost_center'] != 'Oil Refining']
+    # drop oil refining and RMI cost center
+    tag_profiles.drop(tag_profiles[tag_profiles['cost_center'] == 'RMI'].index, inplace = True)
+    tag_profiles.drop(tag_profiles[tag_profiles['cost_center'] == 'Oil Refining'].index, inplace = True)
 
 
     # change content_id to integer
     tag_profiles['content_id'] = tag_profiles['content_id'].astype(int)
 
-    df_import_f2 = df_import_f2.drop(['cost_center'], axis=1)
-
     # Write out backup and import to MySQL
     df_import_f2.to_excel(file)
 
     # drop tag_cat_y and rename tag_cat_x to tag_cat
-    df_import_f2 = df_import_f2.drop(['tag_cat_y'], axis=1)
-    df_import_f2.rename(columns={'tag_cat_x':'tag_cat'}, inplace=True)
+    # df_import_f2 = df_import_f2.drop(['tag_cat_y'], axis=1)
+    # df_import_f2.rename(columns={'tag_cat_x':'tag_cat'}, inplace=True)
 
+    # subset to columns present in MySQL table
+    df_import_f2 = df_import_f2[['content_id','tag_cat','tag','tag_guid', 'cost_center']]
 
+    # set nan cost_center to null
+    df_import_f2['cost_center'] = df_import_f2['cost_center'].replace('nan', '')
+
+    # import to MySQL
     df_import_f2.to_sql(con=database_connection, name='portal_content_tags', if_exists='append', index=False)
 
     # update cost_center in portal_live
