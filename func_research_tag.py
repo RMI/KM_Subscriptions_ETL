@@ -87,8 +87,7 @@ def research_tag():
     df_import_f2['profileTag'] = df_import_f2['tag_guid'].isin(profile_noConflict)
     df_import_f2['conflictTag'] = df_import_f2['tag_guid'].isin(conflictTags)
 
-
-    # create a new column to identify content_id with at least one tag from combo and one from combo2, grouped by content_id
+    # create a new column to identify content_id with at least one tag from current issues and one from subject matter, grouped by content_id
     df_import_f2['tag_match'] = df_import_f2.groupby('content_id')['profileTag'].transform('any') & df_import_f2.groupby('content_id')['conflictTag'].transform('any')
 
     

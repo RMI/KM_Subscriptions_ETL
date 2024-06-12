@@ -15,6 +15,27 @@ import sqlalchemy
 from sqlalchemy import text
 from func_tagging import func_tagging
 from func_tag_transform import tag_transform
+import urllib.parse
+import subprocess
+import sys
+
+# Prompt user to select prod or dev
+run_type = input('Enter "prod" or "dev" to select production or development environment: ')
+run_type = run_type.lower()
+
+#run_type = 'prod'
+if run_type == 'prod':
+    # Connect to VPN
+    p = subprocess.Popen('powershell.exe -ExecutionPolicy RemoteSigned -file "ps_vpn_connect_rmi.ps1"', stdout=sys.stdout)
+elif run_type == 'dev':
+    # Connect to VPN
+    p = subprocess.Popen('powershell.exe -ExecutionPolicy RemoteSigned -file "ps_vpn_connect_flex.ps1"', stdout=sys.stdout)
+else:
+    print('Invalid entry. Please enter "prod" or "dev"')
+    exit()
+
+# Add section to delete from portal_content_tags where content_id not in portal_live
+
 
 # Select research or newsroom only
 #run_type = 'newsroom'
@@ -126,10 +147,33 @@ news = news[news['title'].notnull()]
 # Replace special characters that can create problems when adding full text to SharePoint
 news['file_title'] = news['title'].str.replace('[\/<>*"?|]', "", regex=True)
 news['file_title'] = news['file_title'].str.replace('[:]', "-", regex=True)
+# replace all other special characters with a _ 
+#news['file_title'] = news['file_title'].str.replace('[^A-Za-z0-9]+', '_', regex=True)
 news['file_title'] = news['file_title'].str[:125].str.strip()
 
 # Drop duplicate titles
 news.drop_duplicates("title", inplace=True)
+
+# Remove title from description, if necessary
+# Function to clean description
+def clean_description(row):
+    title = row['title']
+    description = row['description']
+    
+    if description.startswith(title):
+        # Check if there is more text beyond the title
+        remaining_text = description[len(title):].strip()
+        if remaining_text:
+            description = remaining_text
+    
+    return description
+
+# Apply the function to the DataFrame
+news['description'] = news.apply(clean_description, axis=1)
+
+# trim whitespace and "." from beginning of description
+news['description'] = news['description'].str.lstrip('.')
+news['description'] = news['description'].str.lstrip()
 
 #Trim description and creator fields to match 5000 and 1000 char limits
 news['title'] = news['title'].str[:498]
@@ -139,11 +183,21 @@ news['description'] = news['description'].str[:4998]
 news['creators'] = news['creators'].str[:998]
 
 # add request url for full text
-news['url_request'] = 'https://apps.powerapps.com/play/e/default-8ed8a585-d8e6-4b00-b9cc-d370783559f6/a/1e7fab62-974b-4a8c-8d40-b002ba18a5a9?art=' + news['file_title']
+request_app = 'https://apps.powerapps.com/play/e/default-8ed8a585-d8e6-4b00-b9cc-d370783559f6/a/1e7fab62-974b-4a8c-8d40-b002ba18a5a9?art='
+
+# encode file_title
+news['safe_string'] = news['file_title'].apply(urllib.parse.quote_plus)
+
+
+# concat url to file_title and encode
+news['url_request'] = request_app + news['safe_string']
+
+# drop safe_string
+news.drop(columns=['safe_string'], inplace=True)
+
 
 
 news.to_excel('news_data.xlsx')
-
 
 #########################################################
 ################# Data Import ###########################
@@ -193,6 +247,13 @@ wb.Close(True)
 del(wb)
 # Quit
 xlapp.Quit()
+# force quit excel
+os.system("taskkill /f /im excel.exe")
+
+
+# Close connections
+database_connection.dispose()
+connection.close()
 
 
 # delete all .json files in the Data folder

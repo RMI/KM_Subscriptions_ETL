@@ -48,6 +48,7 @@ news = news[news['title'].notnull()]
 # Replace special characters that can create problems when adding full text to SharePoint
 news['file_title'] = news['title'].str.replace('[\/<>*"?|]', "", regex=True)
 news['file_title'] = news['file_title'].str.replace('[:]', "-", regex=True)
+#news['file_title'] = news['file_title'].str.replace('[^A-Za-z0-9]+', '_', regex=True)
 news['file_title'] = news['file_title'].str[:150].str.strip()
 
 # Add URL for full text request

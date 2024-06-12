@@ -49,6 +49,9 @@ df_entries['url'] = 'http://dx.doi.org/' + df_entries['doi']
 df_full1 = df_entries[['source', 'url', 'title', 'creators', 'doi', 'publicationName', 'publicationDate', 'abstract']]
 df_full1.rename(columns={'abstract':'description', 'publicationDate':'pubDate', 'publicationName': 'pubName'}, inplace=True)
 
+# Remove any non-English characters from description
+df_full1['description'] = df_full1['description'].str.encode('ascii', 'ignore').str.decode('ascii')
+
 # Write out data
 df_full1.to_excel('Data/springer_data.xlsx')
 

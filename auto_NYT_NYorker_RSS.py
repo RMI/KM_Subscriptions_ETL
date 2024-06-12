@@ -31,7 +31,7 @@ df['source'] = df['source'].str.replace('https://www.newyorker.com/feed/news','T
 df['source'] = df['source'].str.replace('https://www.newyorker.com/feed/tech','The New Yorker', regex=True)
 df['pubDate'] = pd.to_datetime(df['published'], errors='coerce')
 df['pubDate']= df['pubDate'].dt.date
-df['description'] = df['title'] + '. ' + df['summary']
+df['description'] = df['summary']
 df['url'] = df['link']
 df['creators'] = df['author']
 df_trim= df[['title', 'url', 'pubDate', 'creators', 'description', 'source']]

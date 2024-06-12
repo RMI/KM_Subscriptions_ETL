@@ -20,7 +20,7 @@ df_news=df_news[['title', 'link', 'published','summary']]
 df_news['source']='MIT Sloan Management Review'
 df_news['pubDate'] = pd.to_datetime(df_news['published'])
 df_news['pubDate']= df_news['pubDate'].dt.date
-df_news['description'] = df_news['title'] + '. ' + df_news['summary']
+df_news['description'] = df_news['summary']
 df_news['url'] = df_news['link']
 df_news_trim= df_news[['title', 'url', 'pubDate', 'description', 'source']]
 

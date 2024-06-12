@@ -38,13 +38,14 @@ def tag_transform():
         df_check = pd.DataFrame(result.fetchall())
         df_check.columns = result.keys()
 
-    # cross check to filter out wide format that have already been converted
+    # filter out rows in df1 that are already in df_check
     df = df1[~df1.id.isin(df_check['content_id'])]
 
     # Transform wide tag categories to long format and remove Null
     df_import = pd.melt(df, id_vars= 'id', value_vars= df[1:len(df.columns)], value_name='tag', var_name='tag_cat')
     df_import = df_import[df_import['tag'].notnull()]
     df_import = df_import[df_import['tag'] != '']
+
 
     # Split comma separated tags and join back to id and category
     df_tags = df_import['tag'].str.split(",", expand=True)
@@ -67,6 +68,9 @@ def tag_transform():
     # Merge tag GUID to tag data
     df_import_f2 = pd.merge(df_import_f2, df_tag_id, how='left', left_on='tag', right_on='tag')
 
+    # print number of tags that do not have a GUID
+    print('Number of tags without a GUID: ', len(df_import_f2[df_import_f2['guid'].isnull()]))
+   
     # Drop rows with duplicate content_id and tag_guid
     df_import_f2 = df_import_f2.drop_duplicates(subset=['content_id', 'guid'])
 
@@ -80,9 +84,13 @@ def tag_transform():
     df_tag_prog = df_tag_prog[df_tag_prog['cost_center'] != 'RMI']
     df_tag_prog = df_tag_prog[df_tag_prog['cost_center'] != 'Oil Refining']
 
+    # print unique cost centers
+    print('Unique cost centers: ', df_tag_prog['cost_center'].unique())
     # Merge tag profiles to tag data, keeping all matches
     df_import_f2 = pd.merge(df_import_f2, df_tag_prog, how='outer', left_on='guid', right_on='tag_guid')
 
+    # print number of tags that do not have a cost center
+    print('Number of tags without a cost center: ', len(df_import_f2[df_import_f2['cost_center'].isnull()]))
     ###################
     # drop rows with null content_id
     df_import_f2 = df_import_f2[df_import_f2['content_id'].notnull()]
@@ -127,6 +135,9 @@ def tag_transform():
     # drop null cost_center
     tag_profiles = tag_profiles[tag_profiles['cost_center'] != '']
 
+    # print length of tag_profiles where cost_center is not null
+    print('Number of content_ids with a cost center: ', len(tag_profiles))
+
     # drop oil refining and RMI cost center
     tag_profiles.drop(tag_profiles[tag_profiles['cost_center'] == 'RMI'].index, inplace = True)
     tag_profiles.drop(tag_profiles[tag_profiles['cost_center'] == 'Oil Refining'].index, inplace = True)
@@ -148,14 +159,19 @@ def tag_transform():
     # set nan cost_center to null
     df_import_f2['cost_center'] = df_import_f2['cost_center'].replace('nan', '')
 
+    # print number of rows to import
+    print('Number of rows to import: ', len(df_import_f2))
     # import to MySQL
     df_import_f2.to_sql(con=database_connection, name='portal_content_tags', if_exists='append', index=False)
+
+    # print number of rows to import
+    print('Number of profiles to import: ', len(tag_profiles))
 
     # update cost_center in portal_live
     with database_connection.connect() as conn:
         for index, row in tag_profiles.iterrows():
             conn.execute(text("update portal_live set profiles = :cost_center where id = :content_id"), {'cost_center' : row['cost_center'], 'content_id' : row['content_id']})
-           # conn.commit()
+            conn.commit()
 
     # Close connections
     database_connection.dispose()

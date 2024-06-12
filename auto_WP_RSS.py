@@ -30,7 +30,6 @@ df['source'] = 'Washington Post'
 df['pubDate'] = df['published'].str[:16]
 df['pubDate'] = pd.to_datetime(df['pubDate'], infer_datetime_format=True, exact=False, utc=True)
 df['pubDate']= df['pubDate'].dt.date
-df['summary'] = df['title'] + '. ' + df['summary']
 df['description'] = df['summary']
 df['url'] = df['link']
 df['creators'] = df['author']

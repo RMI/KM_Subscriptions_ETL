@@ -36,7 +36,6 @@ df['title'] = df['title'].str.strip()
 df['source'] = 'Sunday Times Africa'
 df['pubDate'] = pd.to_datetime(df['published'])
 df['pubDate']= df['pubDate'].dt.date
-df['summary'] = df['title'] + '. ' + df['summary']
 p_sep = "</p>"
 p_str = '<p>'
 df['summary'] = df['summary'].str.replace(p_sep, '', regex=False)

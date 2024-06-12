@@ -19,7 +19,6 @@ for i in rss_url:
 # Trim summary to remove href
 sep = r'/></a>'
 df['summary'] = df['summary'].str.split(sep, regex=True).str[1]
-df['summary'] = df['title'] + '. ' + df['summary']
 
 # add source
 df['source'] = 'Times of India'

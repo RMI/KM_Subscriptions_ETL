@@ -14,6 +14,21 @@ load_dotenv('cred.env')
 rmi_db = os.getenv('DBASE_PWD')
 rmi_ip = os.getenv('DBASE_IP')
 
+rmi_ip_dev = os.getenv('DBASE_IP_DEV')
+
+# Condition to add data to dev or production database
+# prompt in terminal to select database and wait for user input
+database = input('Enter database (dev or prod): ')
+
+# don't continue until user enters 'dev' or 'prod'
+while database != 'dev' and database != 'prod':
+    database = input('Enter database (dev or prod): ')
+
+if database == 'dev':
+    rmi_ip = rmi_ip_dev
+
+# Database connection
+
 database_username = 'rmiadmin'
 database_password = rmi_db
 database_ip       = rmi_ip

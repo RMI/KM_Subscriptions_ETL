@@ -14,7 +14,6 @@ df_news=pd.json_normalize(news_feed.entries)
 df_news['source']='Stanford Social Innovation Review'
 df_news['pubDate'] = pd.to_datetime(df_news['updated'])
 df_news['pubDate']= df_news['pubDate'].dt.date
-df_news['summary'] = df_news['title'] + '. ' + df_news['summary']
 df_news['description'] = df_news['summary']
 df_news['url'] = df_news['link']
 df_news_trim= df_news[['title', 'url', 'pubDate', 'description', 'source']]

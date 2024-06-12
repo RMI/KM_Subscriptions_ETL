@@ -36,7 +36,7 @@ df['summary'] = df['summary'].str.split(sep).str[0]
 df['summary'] = df['summary'].str.replace(p_str, '', regex=False)
 df['summary'] = df['summary'].str.replace(img, '', regex=False)
 df['summary'] = df['summary'].str.replace(img_2, '', regex=False)
-df['summary'] = df['title'] + '. ' + df['summary']
+df['summary'] = df['summary']
 df.rename(columns={'link':'url', 'author':'creators', 'published':'pubDate', 'summary':'description'},inplace=True)
 
 # write out
