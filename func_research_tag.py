@@ -114,7 +114,7 @@ def research_tag():
 
     with database_connection.connect() as conn:
         for i in oil:
-            result = conn.execute(text("select id, title, source, pubDate, description, url_full_txt, tag_concat from portal_live where id =" + str(i)))
+            result = conn.execute(text("select id, title, source, pubDate, description,  tag_concat, url_full_txt, url_request from portal_live where id =" + str(i)))
             intel = pd.DataFrame(result.fetchall())
             intel.columns = result.keys()
             df = pd.concat([df, intel], axis=0)
@@ -132,7 +132,7 @@ def research_tag():
     # get title, source, content_id, and tag_contact from database for content_id in oil_intel_all
 
     with database_connection.connect() as conn:
-            result = conn.execute(text("select id, title, source, pubDate, description, url_full_txt, tag_concat, tag_score from portal_live where tag_score > 1 and pubDate >" + str(date.today() - timedelta(days=90))))
+            result = conn.execute(text("select id, title, source, pubDate, description, tag_concat, tag_score, url_full_txt, url_request from portal_live where tag_score > 1 and pubDate >" + str(date.today() - timedelta(days=90))))
             all_articles = result.fetchall()
             all_articles = pd.DataFrame(all_articles)
             all_articles.columns = result.keys()
@@ -149,105 +149,10 @@ def research_tag():
 
     df.to_excel('Data/Research/oil_intel_all' + str(date.today()) + '.xlsx')
         #print(df_import_f2[df_import_f2['combo_match'] == True].sort_values(by='content_id'))
+    
+    # print rows from each dataframe
+    print(str(len(oil_intel)) + ' rows in oil_intel')
+    print(str(len(oil_intel_all)) + ' rows in oil_intel_all')
 
-research_tag()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ###################
-    # drop rows with null content_id
-    df_import_f2 = df_import_f2[df_import_f2['content_id'].notnull()]
-
-    # drop tag_guid and tag_cat columns
-    df_import_f2 = df_import_f2.drop(['tag_guid'], axis=1)
-
-    # rename guid to tag_guid
-    df_import_f2.rename(columns={'guid':'tag_guid'}, inplace=True)
-
-    # melt cost_center to comma separated string
-    df_import_f2['cost_center'] = df_import_f2['cost_center'].astype(str)
-    tag_profiles = df_import_f2.groupby('content_id').agg({'cost_center': ', '.join}).reset_index()
-
-    # remove duplicates from cost_center
-    tag_profiles['cost_center'] = tag_profiles['cost_center'].apply(lambda x: ', '.join(set(x.split(', '))))
-
-    # remove nan values
-    tag_profiles['cost_center'] = tag_profiles['cost_center'].str.replace('nan', '')
-
-    # remove leading and trailing spaces
-    tag_profiles['cost_center'] = tag_profiles['cost_center'].str.strip()
-    # where there are two spaces, replace with one
-    pattern = re.compile(r'\s{2,}')
-    tag_profiles['cost_center'].replace(pattern, ' ', regex = True, inplace = True)
-    # Remove duplicate and trailing commas
-    pattern = re.compile(r',{2,}')
-    tag_profiles['cost_center'].replace(pattern, ',', regex = True, inplace = True)
-    pattern = re.compile(r',\s,\s')
-    tag_profiles['cost_center'].replace(pattern, ', ', regex = True, inplace = True)
-    # where there are three commas, replace with one
-    pattern = re.compile(r',{3,}')
-    tag_profiles['cost_center'].replace(pattern, ',', regex = True, inplace = True)
-    # where there are three commas with space in between each, replace with one
-    pattern = re.compile(r',\s{3,}')
-    tag_profiles['cost_center'].replace(pattern, ', ', regex = True, inplace = True)
-    pattern = re.compile(r',\s,\s,\s')
-    tag_profiles['cost_center'].replace(pattern, ', ', regex = True, inplace = True)
-    pattern = re.compile(r'(^[,\s]+)|([,\s]+$)')
-    tag_profiles['cost_center'].replace(pattern, '', regex = True, inplace = True)
-
-    # drop null cost_center
-    tag_profiles = tag_profiles[tag_profiles['cost_center'] != '']
-
-    # drop oil refining cost center
-    tag_profiles.drop(tag_profiles[tag_profiles['cost_center'] == 'Oil Refining'].index, inplace = True)
-
-
-    # change content_id to integer
-    tag_profiles['content_id'] = tag_profiles['content_id'].astype(int)
-
-    # Write out backup and import to MySQL
-    df_import_f2.to_excel(file)
-
-    # drop tag_cat_y and rename tag_cat_x to tag_cat
-    # df_import_f2 = df_import_f2.drop(['tag_cat_y'], axis=1)
-    # df_import_f2.rename(columns={'tag_cat_x':'tag_cat'}, inplace=True)
-
-    # subset to columns present in MySQL table
-    df_import_f2 = df_import_f2[['content_id','tag_cat','tag','tag_guid', 'cost_center']]
-
-    print(df_import_f2['cost_center'].unique())
-
-    # set nan cost_center to null
-    df_import_f2['cost_center'] = df_import_f2['cost_center'].replace('nan', '')
-
-    # drop null cost_center
-    df_import_f2 = df_import_f2[df_import_f2['cost_center'] != '']
-
-   # df_import_f2.to_sql(con=database_connection, name='portal_content_tags', if_exists='append', index=False)
-
-
-
-    # Close connections
-    database_connection.dispose()
-    conn.close()
-
-    # return success or failure message
-    if len(df_import_f2) > 0:
-        return 'Success'
-    else:
-        return 'Failure'
+    # Return the dataframes
+    return oil_intel, oil_intel_all

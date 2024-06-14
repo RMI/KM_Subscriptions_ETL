@@ -12,10 +12,6 @@ rmi_ip = os.getenv('DBASE_IP')
 
 df = pd.read_excel('news_data.xlsx')
 
-df = df[[ 'title','file_title', 'pubDate', 'url', 'url_full_txt', 'url_request', 'creators', 'description', 'source','adaptation','behavior', 'emissions', 
-             'environment','finance','geography','industry', 'intervention', 'policy', 'sector', 'technology', 'theory','climate_events',
-             'org_comp','tag_concat', 'tag_score']]
-
 # connect to database
 config = {
   'host': rmi_ip,
@@ -40,7 +36,10 @@ final_result = list(map(str.lower,final_result))
 df_import = df
 df_import.set_index('title')
 df_import = df_import.drop(df_import[df_import.title.str.lower().isin(final_result)].index.tolist())
-df_import.reset_index()
+df_import.reset_index(drop=True, inplace=True)
+
+# remoove Unamed: 0 column
+df_import = df_import.drop('Unnamed: 0', axis=1)
 
 # close connection
 cursor.close()
