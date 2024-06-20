@@ -8,7 +8,7 @@ from pathlib import Path
 #import numpy as np
 #import re
 import win32com.client
-#import time
+import time
 import os
 from dotenv import load_dotenv
 import sqlalchemy
@@ -36,6 +36,7 @@ else:
 
 # Add section to delete from portal_content_tags where content_id not in portal_live
 
+time.sleep(5)
 
 # Select research or newsroom only
 #run_type = 'newsroom'
@@ -105,6 +106,13 @@ exec(open('auto_times_india.py').read())
 exec(open('auto_guardian_API.py').read())
 # Sunday Times Africa RSS feed: Added 1/22/2024
 exec(open('auto_SundayTimes_RSS.py').read())
+# Rigzone
+exec(open('auto_rigzone_RSS.py').read())
+# Oil Price.com
+exec(open('auto_oilPrice_RSS.py').read())
+# Al Jazeera
+exec(open('auto_alJazeera_RSS.py').read())
+
 
 #########################################################
 ################# Data Aggregation ######################
@@ -195,9 +203,18 @@ news['url_request'] = request_app + news['safe_string']
 # drop safe_string
 news.drop(columns=['safe_string'], inplace=True)
 
+# set newsroom = 0 for records with source from rigzone, oilprice, or aljazeera
+exclude = ['Rigzone', 'Oil Price.com', 'Al Jazeera']
 
+for index, row in news.iterrows():
+    if row['source'] in exclude:
+        news.at[index, 'newsroom'] = 0
+    else:
+        news.at[index, 'newsroom'] = 1
 
+print(news.columns)
 news.to_excel('news_data.xlsx')
+
 
 #########################################################
 ################# Data Import ###########################
